@@ -1,4 +1,4 @@
-# MyAnime
+﻿# MyAnime
 A rather simple web scraping program for MyAnimeList
 
 
@@ -9,9 +9,10 @@ MyRandomAnime object takes one argument which is a string version of a nickname 
 As of now, the following methods are available:
 
 
-.title_score(title = '') – if no argument is given, returns a dictionary of pairs Anime title and Score, otherwise returns a specified title and its score
+.get_all_scores() – returns a dictionary of pairs anime_title and anime_score
 
-.random_title(titles) – takes .title_score() as an argument to return a random Anime Title
+.get_score_for_title(title) – retrieves score for a given title
 
+.random_title() – returns a random anime title from user's anime list
 
 

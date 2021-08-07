@@ -1,78 +1,71 @@
+# #!/usr/bin/env python3
+
 import re
 import requests
 import bs4
-from random import randrange
+import random
+from typing import Optional
 
 
 class MyAnime:
+    """A class to manipulate data from my anime list."""
 
-    def __init__(self, nickname):
+    _STATUS_ALL = 7
+    _PATTERN_TITLE = 'title":.*?anime'
+    _PATTERN_SCORE = 'score":.*?tags'
+
+    def __init__(self, nickname) -> None:
+        """Initialize self.
+
+        :param nickname: a nickname of the user to fetch the list for
+        """
         self.nickname = nickname
 
+    def get_all_scores(self) -> dict[str, int]:
+        """Get the user score map
 
-    def title_score(self, title=''):
-        req = requests.get(f'https://myanimelist.net/animelist/{self.nickname}?status=7')
+        Makes a request to MyAnimeList to download the user list.
+
+        :return: a dictionary of anime title to anime score
+        """
+        req = requests.get(
+            f'https://myanimelist.net/animelist/{self.nickname}?status={self._STATUS_ALL}')
         soup = bs4.BeautifulSoup(req.text, "lxml")
         soup_string = str(soup.select('.list-table')[0])
 
-        pattern_title = 'title":.*?anime'
-        anime_title = re.findall(pattern_title, soup_string)
+        anime_title: list[str] = [
+            title.replace('title":"', '').replace('","anime', '')
+            for title in re.findall(self._PATTERN_TITLE, soup_string)
+        ]
 
-        for item in range(len(anime_title)):
-            anime_title[item] = anime_title[item].replace('title":"', '').replace('","anime', '')
+        anime_score: list[int] = [
+            score.replace('score":', '').replace(',"tags', '')
+            for score in re.findall(self._PATTERN_SCORE, soup_string)
+        ]
 
-        pattern_score = 'score":.*?tags'
-        anime_score = re.findall(pattern_score, soup_string)
+        return dict(zip(anime_title, anime_score))
 
-        for item in range(len(anime_score)):
-            anime_score[item] = anime_score[item].replace('score":', '').replace(',"tags', '')
+    def get_score_for_title(self, title) -> Optional[int]:
+        """Retrieve score for a given title.
 
-        title_score = {}
-        for index in range(len(anime_title)):
-            title_score[anime_title[index]] = anime_score[index]
+        Accepts case-insensitive titles.
 
-        if title == '':
-            return title_score
-        else:
-            lowercased_anime = dict((title.lower(), score) for title, score in title_score.items())
-            return title, lowercased_anime[title]
+        :param title: title of the anime to get the score for
 
+        :return: anime score
+        """
+        title_score = self.get_all_scores()
 
-    def random_title(self, titles):
-        listed = list(titles.keys())
-        return listed[randrange(len(listed))]
+        for item_title, item_score in title_score.items():
+            if item_title.lower() == title.lower():
+                return item_score
 
+        return None
 
-# class MyRandomAnime:
+    def random_title(self) -> str:
+        """Return random anime title from the user list
 
-#    def __init__(self, nickname):
-#       self.nickname = nickname
-#
-#    req = requests.get(f'https://myanimelist.net/animelist/{nickname}?status=7')
-#    soup = bs4.BeautifulSoup(req.text,"lxml")
-#    soup_string = str(soup.select('.list-table')[0])
-#
-#
-#    def random(self):
-#        pattern = 'title":.*?anime'
-#        anime_title = re.findall(pattern,soup_string)
-
-#       for item in range(len(anime_title)):
-#           anime_title[item] = anime_title[item].replace('title":"','').replace('","anime','')
-#
-#       return anime_title[randrange(len(anime_title))]
-#
-#
-#   def title_score(self):
-#       pattern = 'score":.*?tags'
-#       anime_score = re.findall(pattern,soup_string)
-#
-##       for item in range(len(anime_score)):
-#          anime_score[item] = anime_score[item].replace('score":','').replace(',"tags','')
-#
-#       return anime_score
-		
-		
-
-
-        
+        :return: anime title
+        """
+        titles = list(self.get_all_scores().keys())
+        return random.choice(titles)
