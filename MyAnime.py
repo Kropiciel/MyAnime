@@ -1,6 +1,7 @@
 # #!/usr/bin/env python3
 
-import re
+
+import json
 import requests
 import bs4
 import random
@@ -11,8 +12,6 @@ class MyAnime:
     """A class to manipulate data from my anime list."""
 
     _STATUS_ALL = 7
-    _PATTERN_TITLE = 'title":.*?anime'
-    _PATTERN_SCORE = 'score":.*?tags'
 
     def __init__(self, nickname) -> None:
         """Initialize self.
@@ -28,22 +27,23 @@ class MyAnime:
 
         :return: a dictionary of anime title to anime score
         """
-        req = requests.get(
-            f'https://myanimelist.net/animelist/{self.nickname}?status={self._STATUS_ALL}')
-        soup = bs4.BeautifulSoup(req.text, "lxml")
-        soup_string = str(soup.select('.list-table')[0])
+        json_request = 0
+        all_titles_scores = {}
+        while True:
+            req = requests.get(
+                f'https://myanimelist.net/animelist/{self.nickname}/load.json?offset={json_request}&status={self._STATUS_ALL}')
+            soup = bs4.BeautifulSoup(req.text, "lxml")
+            select_anime_list = soup.select('p')[0]
+            json_format = select_anime_list.getText()
+            anime_details = json.loads(json_format)
+            anime_score = {anime['anime_title']: anime['score'] for anime in anime_details}
+            all_titles_scores = {**all_titles_scores, **anime_score}
 
-        anime_title: list[str] = [
-            title.replace('title":"', '').replace('","anime', '')
-            for title in re.findall(self._PATTERN_TITLE, soup_string)
-        ]
+            if len(anime_details) < 100:
+                break
+            json_request += 300
 
-        anime_score: list[int] = [
-            score.replace('score":', '').replace(',"tags', '')
-            for score in re.findall(self._PATTERN_SCORE, soup_string)
-        ]
-
-        return dict(zip(anime_title, anime_score))
+        return all_titles_scores
 
     def get_score_for_title(self, title) -> Optional[int]:
         """Retrieve score for a given title.

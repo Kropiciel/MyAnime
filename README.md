@@ -4,7 +4,7 @@ A rather simple web scraping program for MyAnimeList
 
 
 
-MyRandomAnime object takes one argument which is a string version of a nickname of a person's MAL account
+MyAnime object takes one argument – a nickname of a person's MAL account
 
 As of now, the following methods are available:
 
